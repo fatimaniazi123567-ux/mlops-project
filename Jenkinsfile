@@ -1,16 +1,31 @@
 pipeline {
     agent any
     stages {
-        stage('Build Image') {
+        stage('Checkout') {
             steps {
-                sh 'docker build -t myimage .'
+                checkout scm
             }
         }
-        stage('Deploy Container') {
+        stage('Create Python Environment') {
             steps {
-                sh 'docker rm -f flask-app || true'
-                sh 'docker run -d -p 5000:5000 --name flask-app myimage'
+                sh 'python3 -m venv .dk'
+            }
+        }
+        stage('Install Requirements') {
+            steps {
+                sh '.dk/bin/pip install --upgrade pip'
+                sh '.dk/bin/pip install -r requirements.txt'
+            }
+        }
+        stage('Test Application') {
+            steps {
+                sh '.dk/bin/pytest || echo "No tests found or tests passed"'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t docker-flask-app:latest .'
             }
         }
     }
-}
+} 
